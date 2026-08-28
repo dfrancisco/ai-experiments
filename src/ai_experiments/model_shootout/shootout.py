@@ -81,6 +81,19 @@ def _parse_judge_verdict(raw: str) -> dict:
         raise
 
 
+def _normalize_label(raw: str) -> str:
+    text = raw.strip().upper()
+    text = re.sub(r"^(?:RESPONSE|OPTION|ANSWER)\s+", "", text)
+    if len(text) == 1 and text.isalpha():
+        return text
+
+    match = re.search(r"\b([A-Z])\b", text)
+    if match:
+        return match.group(1)
+
+    return text
+
+
 def judge_responses(
     prompt: str,
     answers: dict[str, str],
@@ -110,17 +123,19 @@ Pick the single best response.
 
 Respond with ONLY valid JSON in this format:
 {{
-  "winner": "<label>",
+  "winner": "A",
   "reasoning": "<brief explanation>",
-  "rankings": ["<best label>", "<second label>", "..."]
-}}"""
+  "rankings": ["A", "B", "C"]
+}}
+
+Use single-letter labels only (A, B, C, etc.), not "Response A"."""
 
     result = call_model(judge_model, judge_prompt)
     verdict = _parse_judge_verdict(result["answer"])
 
-    winner_label = verdict["winner"].strip().upper()
+    winner_label = _normalize_label(verdict["winner"])
     if winner_label not in label_to_model:
-        raise ValueError(f"Judge returned unknown label: {winner_label!r}")
+        raise ValueError(f"Judge returned unknown label: {verdict['winner']!r}")
 
     return {
         "judge_model": result["model"],
@@ -129,10 +144,11 @@ Respond with ONLY valid JSON in this format:
         "reasoning": verdict["reasoning"],
         "rankings": [
             {
-                "label": label.strip().upper(),
-                "model": label_to_model[label.strip().upper()],
+                "label": label,
+                "model": label_to_model[label],
             }
-            for label in verdict["rankings"]
+            for label in (_normalize_label(entry) for entry in verdict["rankings"])
+            if label in label_to_model
         ],
         "elapsed_seconds": result["elapsed_seconds"],
     }
