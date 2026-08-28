@@ -11,6 +11,30 @@ load_dotenv()
 DEFAULT_JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "openrouter/free")
 
 
+def _extract_answer(data: dict) -> str:
+    output = data.get("output", [])
+    message_parts: list[str] = []
+    fallback_parts: list[str] = []
+
+    for item in output:
+        for content in item.get("content", []):
+            text = content.get("text", "")
+            if not text:
+                continue
+
+            if item.get("type") == "message" and content.get("type") == "output_text":
+                message_parts.append(text)
+            elif content.get("type") != "reasoning_text":
+                fallback_parts.append(text)
+
+    if message_parts:
+        return "\n".join(message_parts)
+    if fallback_parts:
+        return "\n".join(fallback_parts)
+
+    raise ValueError(f"No text in model response: {data}")
+
+
 def call_model(model: str, prompt: str) -> dict:
     start = time.perf_counter()
 
@@ -34,18 +58,27 @@ def call_model(model: str, prompt: str) -> dict:
 
     return {
         "model": data["model"],
-        "answer": data["output"][0]["content"][0]["text"],
+        "answer": _extract_answer(data),
         "elapsed_seconds": elapsed,
     }
 
 
 def _parse_judge_verdict(raw: str) -> dict:
     text = raw.strip()
+    if not text:
+        raise ValueError("Judge returned empty response")
+
     fence_match = re.search(r"```(?:json)?\s*(.*?)\s*```", text, re.DOTALL)
     if fence_match:
         text = fence_match.group(1).strip()
 
-    return json.loads(text)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        brace_match = re.search(r"\{.*\}", text, re.DOTALL)
+        if brace_match:
+            return json.loads(brace_match.group(0))
+        raise
 
 
 def judge_responses(
@@ -151,5 +184,7 @@ if __name__ == "__main__":
                 print(f"  {rank}. Response {entry['label']} — {entry['model']}")
         except Exception as e:
             print(f"ERROR: {type(e).__name__}: {e}")
+            if "JSON" in type(e).__name__:
+                print("(The judge model did not return parseable JSON.)")
     else:
         print("\nSkipping judge: need at least two successful responses.")
