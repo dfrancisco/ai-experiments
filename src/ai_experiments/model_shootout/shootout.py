@@ -1,10 +1,14 @@
+import json
 import os
+import re
 import time
 
 import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
+
+DEFAULT_JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "openrouter/free")
 
 
 def call_model(model: str, prompt: str) -> dict:
@@ -29,17 +33,77 @@ def call_model(model: str, prompt: str) -> dict:
     elapsed = time.perf_counter() - start
 
     return {
-    "model": data["model"],
-    "answer": data["output"][0]["content"][0]["text"],
-    "elapsed_seconds": elapsed,
-}
+        "model": data["model"],
+        "answer": data["output"][0]["content"][0]["text"],
+        "elapsed_seconds": elapsed,
+    }
 
-    result = call_model(
-        "openrouter/free",
-        "Explain in two sentences why AI agents are interesting.",
+
+def _parse_judge_verdict(raw: str) -> dict:
+    text = raw.strip()
+    fence_match = re.search(r"```(?:json)?\s*(.*?)\s*```", text, re.DOTALL)
+    if fence_match:
+        text = fence_match.group(1).strip()
+
+    return json.loads(text)
+
+
+def judge_responses(
+    prompt: str,
+    answers: dict[str, str],
+    judge_model: str = DEFAULT_JUDGE_MODEL,
+) -> dict:
+    """Use an LLM to pick the best response among competing models."""
+    if len(answers) < 2:
+        raise ValueError("Need at least two responses to judge")
+
+    labels = [chr(ord("A") + i) for i in range(len(answers))]
+    label_to_model = dict(zip(labels, answers.keys(), strict=True))
+
+    responses_block = "\n\n".join(
+        f"### Response {label}\n{answer}"
+        for label, answer in zip(labels, answers.values(), strict=True)
     )
 
-    print(result)
+    judge_prompt = f"""You are an impartial judge evaluating LLM responses to the same prompt.
+
+Original prompt:
+{prompt.strip()}
+
+{responses_block}
+
+Evaluate each response on relevance, quality, depth, and how well it follows the prompt.
+Pick the single best response.
+
+Respond with ONLY valid JSON in this format:
+{{
+  "winner": "<label>",
+  "reasoning": "<brief explanation>",
+  "rankings": ["<best label>", "<second label>", "..."]
+}}"""
+
+    result = call_model(judge_model, judge_prompt)
+    verdict = _parse_judge_verdict(result["answer"])
+
+    winner_label = verdict["winner"].strip().upper()
+    if winner_label not in label_to_model:
+        raise ValueError(f"Judge returned unknown label: {winner_label!r}")
+
+    return {
+        "judge_model": result["model"],
+        "winner": label_to_model[winner_label],
+        "winner_label": winner_label,
+        "reasoning": verdict["reasoning"],
+        "rankings": [
+            {
+                "label": label.strip().upper(),
+                "model": label_to_model[label.strip().upper()],
+            }
+            for label in verdict["rankings"]
+        ],
+        "elapsed_seconds": result["elapsed_seconds"],
+    }
+
 
 if __name__ == "__main__":
     models = [
@@ -53,16 +117,39 @@ if __name__ == "__main__":
     better at building with AI. Give me three unconventional ways to use that
     time. Optimize for learning and interestingness, not making money.
     """
+    answers = {}
 
-for model in models:
-    print(f"\n{'=' * 60}")
-    print(model)
+    for model in models:
+        print(f"\n{'=' * 60}")
+        print(model)
 
-    try:
-        result = call_model(model, prompt)
-        
-        print(f"Actual model: {result['model']}")
-        print(f"Latency: {result['elapsed_seconds']:.2f}s")
-        print(f"Answer:\n{result['answer']}")
-    except Exception as e:
-        print(f"ERROR: {type(e).__name__}: {e}")
+        try:
+            result = call_model(model, prompt)
+
+            print(f"Actual model: {result['model']}")
+            print(f"Latency: {result['elapsed_seconds']:.2f}s")
+            print(f"Answer:\n{result['answer']}")
+
+            answers[model] = result["answer"]
+        except Exception as e:
+            print(f"ERROR: {type(e).__name__}: {e}")
+
+    if len(answers) >= 2:
+        print(f"\n{'=' * 60}")
+        print("LLM JUDGE")
+        print(f"Judge model: {DEFAULT_JUDGE_MODEL}")
+
+        try:
+            verdict = judge_responses(prompt, answers)
+
+            print(f"Actual judge: {verdict['judge_model']}")
+            print(f"Latency: {verdict['elapsed_seconds']:.2f}s")
+            print(f"\nWinner: {verdict['winner']} (Response {verdict['winner_label']})")
+            print(f"Reasoning: {verdict['reasoning']}")
+            print("\nRankings:")
+            for rank, entry in enumerate(verdict["rankings"], start=1):
+                print(f"  {rank}. Response {entry['label']} — {entry['model']}")
+        except Exception as e:
+            print(f"ERROR: {type(e).__name__}: {e}")
+    else:
+        print("\nSkipping judge: need at least two successful responses.")
