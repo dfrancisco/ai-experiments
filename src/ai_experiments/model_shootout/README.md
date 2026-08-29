@@ -1,24 +1,18 @@
 # Model Shootout
 
-A small experiment comparing several AI models on the same task.
+A small experiment in comparing AI models and exploring how to evaluate their outputs.
 
 ## Question
 
-**How differently do current AI models respond to the same problem?**
+**How do different AI models respond to the same problem, and how can we evaluate those responses?**
 
-The goal wasn't to determine which model is "best." It was to get hands-on experience calling multiple models through a common API and see what differences emerge.
+The goal wasn't to build a rigorous benchmark. It was to get hands-on experience calling multiple models through a common API, comparing their outputs, and then experimenting with using an LLM to evaluate those outputs.
 
 ## Experiment
 
-I gave each model the same prompt:
+I gave several models the same prompt:
 
 > I have a year off between jobs and want to use it to become significantly better at building with AI. Give me three unconventional ways to use that time. Optimize for learning and interestingness, not making money.
-
-Models tested:
-
-- NVIDIA Nemotron 3 Super 120B A12B
-- MiniMax M3
-- MiniMax M2.7
 
 The experiment records:
 
@@ -26,43 +20,76 @@ The experiment records:
 - Response latency
 - The model's answer
 
+Models tested included:
 
+- NVIDIA Nemotron 3 Super 120B A12B
+- MiniMax M3
+- MiniMax M2.7
+
+## The progression
+
+The experiment started very simply:
+
+**1. Ask multiple models the same question**
+
+Call each model through OpenRouter and print the results side-by-side.
+
+**2. Evaluate the answers ourselves**
+
+Initially, the most obvious way to compare the outputs was simply to read them.
+
+This was useful, but it doesn't scale very well. Once you have many models, prompts, or repeated runs, manually inspecting every answer becomes expensive and subjective.
+
+**3. Use an LLM as a judge**
+
+The next step was to have another model evaluate the outputs.
+
+This introduces a more interesting question:
+
+**Can we use AI to evaluate AI?**
+
+Instead of treating evaluation as something that happens after building the system, evaluation becomes part of the system itself.
 
 ## What I learned
 
 - OpenRouter provides a common interface for calling models from different providers.
-- Different models can produce substantially different answers to exactly the same prompt.
-- Some models expose reasoning content while others return only the final answer.
+- Different models can produce substantially different responses to exactly the same prompt.
 - Model latency can vary significantly.
-- Free model endpoints can be rate-limited or fail, so production code needs to handle API errors gracefully.
-- A simple experiment like this is enough to start developing intuition for differences between models.
+- Free model endpoints can be rate-limited or fail, so API calls need error handling.
+- Looking at model outputs manually is a useful starting point for understanding differences.
+- As the number of outputs grows, automated evaluation becomes increasingly valuable.
+- Using an LLM as a judge creates a new problem: **how do you know the judge is judging well?**
 
-
+That last question is probably more interesting than the original model comparison.
 
 ## What surprised me
 
-The biggest difference wasn't necessarily the quality of the ideas. The models had noticeably different **styles of reasoning and answering**.
+The models differed not just in the ideas they produced, but in how they approached the problem.
 
-Nemotron, for example, spent a substantial amount of its response on explicit reasoning before producing its answer, while MiniMax M3 went much more directly to the recommendations.
+Some responses were more direct and concise, while others spent substantially more effort reasoning before producing an answer.
 
-That raises a more interesting question for future experiments:
+This made it clear that "which model is best?" is not really a single question.
 
-**Can we develop a useful way to evaluate models beyond simply asking which answer "looks better"?**
+The answer depends on **what we're evaluating and what we care about**.
 
-## What I'd do differently
+## What's next
 
-This experiment is intentionally simple. A more rigorous comparison would:
+A more rigorous version of this experiment could:
 
-- Run the same prompt multiple times
-- Test more models
-- Measure latency systematically
-- Use structured evaluation criteria
-- Potentially use another model as an evaluator
+- Run each prompt multiple times
+- Define explicit evaluation criteria
+- Compare LLM-judge results against human judgments
+- Test whether different judges agree
+- Explore whether the judge is biased toward particular models or styles
+- Measure the cost and latency of evaluation
 
-For now, that's deliberately out of scope. The point was to learn the basic mechanics and establish a foundation for more interesting experiments.
+For now, the goal is to keep the experiment small and move on to the next thing.
 
-## Next
+## The bigger lesson
 
-Move on to the next experiment rather than over-engineering this one.
+A model call is easy.
+
+The more interesting engineering problem is building a system around the model — including **how you know whether it's actually doing a good job.**
 
 **Build → GitHub → learn → share**
+
