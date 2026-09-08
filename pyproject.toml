@@ -1,7 +1,7 @@
 [project]
 name = "ai-experiments"
 version = "0.1.0"
-description = "Add your description here"
+description = "Experiments in building with AI"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -11,6 +11,7 @@ dependencies = [
 
 [project.scripts]
 ai-experiments = "ai_experiments:main"
+ha-ai = "ai_experiments.home_assistant.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.12.7,<0.13.0"]
