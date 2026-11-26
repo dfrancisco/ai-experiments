@@ -27,6 +27,24 @@ struct ContentView: View {
         }
     }
 
+    var currentTitle: String {
+        switch sidebarSelection {
+        case .all, nil:
+            return "All Goals"
+        case .category(let id):
+            return store.category(for: id)?.name ?? "Goals"
+        }
+    }
+
+    var isAllGoalsSelected: Bool {
+        switch sidebarSelection {
+        case .all, nil:
+            return true
+        case .category:
+            return false
+        }
+    }
+
     // Keep selectedGoalId valid when goals change
     var selectedGoal: Goal? {
         guard let id = selectedGoalId else { return nil }
@@ -39,6 +57,8 @@ struct ContentView: View {
                 .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 280)
         } content: {
             GoalListView(
+                title: currentTitle,
+                isAllGoals: isAllGoalsSelected,
                 goals: currentGoals,
                 selectedGoalId: $selectedGoalId,
                 onAdd: { showingAddGoal = true }

@@ -10,9 +10,19 @@ struct SidebarView: View {
         List(selection: $selection) {
             // All Goals
             Section {
-                Label("All Goals", systemImage: "tray.full.fill")
-                    .tag(SidebarSelection.all)
-                    .badge(store.goals.count)
+                HStack(spacing: 10) {
+                    Image(systemName: "tray.full.fill")
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 18)
+                    Text("All Goals")
+                    Spacer()
+                    Text("\(store.goals.count)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                .contentShape(Rectangle())
+                .tag(SidebarSelection.all)
             }
 
             // Categories
@@ -29,7 +39,7 @@ struct SidebarView: View {
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
                     }
-                    .tag(SidebarSelection.category(category.id))
+                    .contentShape(Rectangle())
                     .contextMenu {
                         Button(role: .destructive) {
                             store.deleteCategory(category)
@@ -40,6 +50,7 @@ struct SidebarView: View {
                             Label("Delete \"\(category.name)\"", systemImage: "trash")
                         }
                     }
+                    .tag(SidebarSelection.category(category.id))
                 }
             } header: {
                 HStack {

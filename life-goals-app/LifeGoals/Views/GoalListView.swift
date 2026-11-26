@@ -2,6 +2,8 @@ import SwiftUI
 
 struct GoalListView: View {
     @EnvironmentObject var store: GoalStore
+    let title: String
+    let isAllGoals: Bool
     let goals: [Goal]
     @Binding var selectedGoalId: UUID?
     let onAdd: () -> Void
@@ -24,6 +26,8 @@ struct GoalListView: View {
         Group {
             if goals.isEmpty {
                 emptyState
+            } else if filtered.isEmpty {
+                filteredEmptyState
             } else {
                 List(selection: $selectedGoalId) {
                     ForEach(filtered) { goal in
@@ -71,7 +75,7 @@ struct GoalListView: View {
     }
 
     private var navigationTitle: String {
-        statusFilter.map { "\($0.rawValue) Goals" } ?? "Goals"
+        statusFilter.map { "\(title) · \($0.rawValue)" } ?? title
     }
 
     private var emptyState: some View {
@@ -79,10 +83,12 @@ struct GoalListView: View {
             Image(systemName: "scope")
                 .font(.system(size: 48, weight: .ultraLight))
                 .foregroundStyle(.secondary)
-            Text("No Goals Here")
+            Text(isAllGoals ? "No Goals Yet" : "No Goals Here")
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(.primary)
-            Text("Tap + to set your first goal for this category.")
+            Text(isAllGoals
+                 ? "Tap + to add your first life goal."
+                 : "Tap + to set your first goal for this category.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -90,6 +96,22 @@ struct GoalListView: View {
             Button("Add Goal", action: onAdd)
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var filteredEmptyState: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "line.3.horizontal.decrease.circle")
+                .font(.system(size: 40, weight: .ultraLight))
+                .foregroundStyle(.secondary)
+            Text("No Matching Goals")
+                .font(.title3.weight(.semibold))
+            Button("Clear Filters") {
+                searchText = ""
+                statusFilter = nil
+            }
+            .buttonStyle(.bordered)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
