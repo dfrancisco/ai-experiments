@@ -1,0 +1,26 @@
+# Xcode build artifacts
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+DerivedData/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+.DS_Store
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# User-specific Xcode settings
+*.xcscheme
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# No user data files are stored in the project directory.
+# App data lives in ~/Library/Application Support/LifeGoals/
