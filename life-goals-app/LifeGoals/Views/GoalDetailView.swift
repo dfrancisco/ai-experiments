@@ -121,7 +121,7 @@ struct GoalDetailView: View {
                             Label("Add Note", systemImage: "plus.circle.fill")
                         }
                         .buttonStyle(.plain)
-                        .foregroundStyle(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                     }
 
                     // Add Note inline editor
@@ -131,7 +131,7 @@ struct GoalDetailView: View {
                                 .font(.body)
                                 .frame(minHeight: 80, maxHeight: 160)
                                 .padding(8)
-                                .background(.background.secondary, in: RoundedRectangle(cornerRadius: 10))
+                                .background(Color(.textBackgroundColor), in: RoundedRectangle(cornerRadius: 10))
                                 .focused($noteFieldFocused)
                                 .onSubmit { submitNote() }
 
@@ -149,7 +149,7 @@ struct GoalDetailView: View {
                             }
                         }
                         .padding(14)
-                        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12))
+                        .background(Color(.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
                         .transition(.asymmetric(
                             insertion: .push(from: .top).combined(with: .opacity),
                             removal: .push(from: .bottom).combined(with: .opacity)
@@ -226,7 +226,7 @@ struct NoteRowView: View {
             // Timeline dot
             VStack(spacing: 0) {
                 Circle()
-                    .fill(.accent)
+                    .fill(Color.accentColor)
                     .frame(width: 8, height: 8)
                     .padding(.top, 6)
                 Rectangle()
@@ -238,15 +238,17 @@ struct NoteRowView: View {
             // Content card
             VStack(alignment: .leading, spacing: 6) {
                 // Timestamp
-                Text(note.createdAt, style: .date)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-                + Text("  ·  ")
-                    .font(.caption2)
-                    .foregroundStyle(.quaternary)
-                + Text(note.createdAt, style: .time)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                HStack(spacing: 4) {
+                    Text(note.createdAt, style: .date)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                    Text("·")
+                        .font(.caption2)
+                        .foregroundStyle(.quaternary)
+                    Text(note.createdAt, style: .time)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
 
                 // Note text
                 Text(note.content)
@@ -256,7 +258,7 @@ struct NoteRowView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
-            .background(.background.secondary, in: RoundedRectangle(cornerRadius: 10))
+            .background(Color(.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 10))
             .overlay(alignment: .topTrailing) {
                 if isHovering {
                     Button(action: onDelete) {

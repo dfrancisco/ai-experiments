@@ -93,7 +93,7 @@ struct AddEditGoalView: View {
                                 .font(.body)
                                 .frame(minHeight: 72, maxHeight: 120)
                                 .padding(8)
-                                .background(.background.secondary, in: RoundedRectangle(cornerRadius: 8))
+                                .background(Color(.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
                         }
                     }
                 }

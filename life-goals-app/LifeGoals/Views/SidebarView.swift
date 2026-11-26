@@ -37,7 +37,7 @@ struct SidebarView: View {
                                 selection = .all
                             }
                         } label: {
-                            Label("Delete "\(category.name)"", systemImage: "trash")
+                            Label("Delete \"\(category.name)\"", systemImage: "trash")
                         }
                     }
                 }
